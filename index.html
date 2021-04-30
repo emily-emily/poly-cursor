@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <title>poly-cursor</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="Interesting Cursors">
+    <meta name="author" content="Emily Yu">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="index.css" />
+    <link rel="stylesheet" href="cursor.css" />
+
+    <!-- Google Fonts (Open Sans) -->
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+
+  </head>
+  <body>
+    <canvas id="myCanvas" resize></canvas>
+    
+    <h1 class="title">poly-cursor</h1>
+
+    <div id="cursor-selection-box">
+      <button class="cursor-hover-fill">triangle</button>
+      <button class="cursor-hover-snapRect">circle</button>
+    </div>
+
+    <!-- jQuery -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"
+      integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous"></script> -->
+    <!-- simplex-noise -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/simplex-noise/2.4.0/simplex-noise.min.js"
+      integrity="sha512-UFPpekaMf0TrCIkPv9mRT3reo/HzSjkOLq57Rtzb+E1ej1TRUOes6J/Ge4uZXyxWA9b4i5DqSZns79YaUoJ2kA==" crossorigin="anonymous"></script>
+    <!-- paper.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.15/paper-full.min.js"
+      integrity="sha512-ovjLI1ZcZe6bw+ImQ21r+sv8q/Vwob2kq7tFidK6E1LWfi0T4uobbmpfEU1//a9h9o5Kkt+MnMWf6rWlg0EiMw==" crossorigin="anonymous"></script>
+
+    <script type="text/javascript" src="canvas.js"></script>
+    <script type="text/javascript" src="cursor-set.js"></script>
+    <script type="text/javascript" src="cursor.js"></script>
+    <script type="text/javascript" src="index.js"></script>
+  </body>
+</html>
