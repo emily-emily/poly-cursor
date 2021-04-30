@@ -5,6 +5,7 @@ class Cursor {
   stuck = false;
   stuckPoints = [];
   stuckGroup = {};
+  angle = 0;
 
   hovering = false;
 
@@ -35,15 +36,14 @@ class Cursor {
   }
 
   updatePos = () => {
-    this.updateDot();
-    
     this.updateStyle();
-
     this.applyStyle();
   }
 
   // lint all style values
   updateStyle = () => {
+    this.dotActive = this.data.styles[this.activeStyle].dotActive;
+
     // lint size
     this.size = this.lint(this.size, this.data.styles[this.activeStyle].size, this.snapSpeed);
     this.cursorScaledPoints = this.data.points.map(p => new paper.Point(p.x * this.size, p.y * this.size));
@@ -52,6 +52,9 @@ class Cursor {
     // lint closed?
     this.smooth = this.data.styles[this.activeStyle].smooth;
     this.closed = this.data.styles[this.activeStyle].closed;
+
+    // lint rotation?
+    this.rotationSpeed = this.data.styles[this.activeStyle].rotationSpeed;
     
     // lint color and fill
     this.lintColor(this.color, this.data.styles[this.activeStyle].color, this.snapSpeed);
@@ -70,12 +73,28 @@ class Cursor {
 
   // apply cursor style to polygon
   applyStyle = () => {
+    // set dot to client position if active
+    if (this.dotActive)
+      this.dotGroup.position.set(this.clientPos.x, this.clientPos.y);
+    else
+      this.dotGroup.position.set(-100, -100);
+
     if (this.smooth)
       this.polygon.smooth();
     else
       this.polygon.flatten(100); // flatten error in pixels
 
     this.polygon.closed = this.closed;
+
+    if (this.activeStyle == "spin"){
+      this.group.rotate(this.rotationSpeed);
+      this.angle = (this.angle + this.rotationSpeed) % 360;
+    }
+    else { // lint back to angle 0
+      let rotation = this.lint(this.angle, 359.99, this.snapSpeed) - this.angle;
+      this.group.rotate(rotation);
+      this.angle = (this.angle + rotation) % 360;
+    }
 
     this.polygon.strokeColor = this.toPaperColor(this.color);
     this.polygon.fillColor = this.toPaperColor(this.fillColor);
@@ -116,42 +135,41 @@ class Cursor {
     a.a = this.lint(a.a, b.a, speed);
   }
 
-  // updates the position of the dot if it is active
-  updateDot = () => {
-    if (this.dotActive)
-      this.dotGroup.position.set(this.clientPos.x, this.clientPos.y);
-    else
-      this.dotGroup.position.set(-100, -100);
-  }
+  // updates the active style
+  setStyle = (style, ev = null) => {
+    // handle snap
+    if (this.activeStyle == "default" && style == "snap") {
+      let itemBox = ev.currentTarget.getBoundingClientRect();
+  
+      let wd2 = itemBox.width / 2;
+      let hd2 = itemBox.height / 2;
+  
+      this.stuckGroup.x = itemBox.left + wd2;
+      this.stuckGroup.y = itemBox.top + hd2;
+      this.stuckPoints = [
+        { x: -wd2, y: -hd2 },
+        { x: wd2, y: -hd2 },
+        { x: wd2, y: hd2 },
+        { x: -wd2, y: hd2 }
+      ];
+  
+      this.updateNPoints(4);
+    }
+    if (this.activeStyle == "snap" && style == "default") {
+      this.activeStyle = "default";
+      this.updateNPoints(this.cursorScaledPoints.length);
+    }
 
-  snapRect = (ev) => {
-    let itemBox = ev.currentTarget.getBoundingClientRect();
-
-    let wd2 = itemBox.width / 2;
-    let hd2 = itemBox.height / 2;
-
-    this.stuckGroup.x = itemBox.left + wd2;
-    this.stuckGroup.y = itemBox.top + hd2;
-    this.stuckPoints = [
-      { x: -wd2, y: -hd2 },
-      { x: wd2, y: -hd2 },
-      { x: wd2, y: hd2 },
-      { x: -wd2, y: hd2 }
-    ];
-
-    this.updateNPoints(4);
-    this.activeStyle = "snap";
-  }
-
-  unsnapRect = (ev) => {
-    this.activeStyle = "default";
-    this.updateNPoints(this.cursorScaledPoints.length);
+    this.activeStyle = style;
   }
 
   // change cursor
   changeCursor = (newData) => {
     // save style
     this.data = newData;
+
+    // reset angle
+    this.angle = 0;
 
     // fill in styles with default
     for (let [key, value] of Object.entries(this.data.styles)) {
@@ -171,6 +189,7 @@ class Cursor {
     this.snapSpeed = this.data.snapSpeed;
 
     this.size = this.data.styles[this.activeStyle].size;
+    this.rotationSpeed = this.data.styles[this.activeStyle].rotationSpeed;
     this.dotActive = this.data.styles[this.activeStyle].dotActive;
     this.smooth = this.data.styles[this.activeStyle].smooth;
     this.closed = this.data.styles[this.activeStyle].closed;
