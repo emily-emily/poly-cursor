@@ -20,6 +20,7 @@ let cursorSet = [
         fill: { r: 0, g: 0, b: 0, a: 0 }
       },
       hover: {
+        size: 30,
         fill: { r: 1, g: 1, b: 1, a: 0.6 }
       },
       snap: {
@@ -48,6 +49,7 @@ let cursorSet = [
         fill: { r: 0, g: 0, b: 0, a: 0 }
       },
       hover: {
+        size: 20,
         fill: { r: 1, g: 1, b: 1, a: 0.6 }
       },
       snap: {

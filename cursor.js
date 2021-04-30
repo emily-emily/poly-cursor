@@ -1,5 +1,6 @@
 class Cursor {
   pos = { x: -100, y: -100 };
+  clientPos = { x: -100, y: -100 };
   activeStyle = "default";
   stuck = false;
   stuckPoints = [];
@@ -27,43 +28,57 @@ class Cursor {
     return a + (b - a) * s;
   }
 
-  updatePos = (clientX, clientY) => {
-    this.updateDot(clientX, clientY);
-    if (this.activeStyle == "snap") {
-      this.lintPoints(this.stuckPoints);
-      this.lintGroupTarget(this.stuckGroup.x, this.stuckGroup.y);
-    }
-    else {
-      this.lintPoints(this.cursorPoints);
-      this.lintGroupClient(clientX, clientY);
-    }
+  // stores client position
+  updateClientPos = (ev) => {
+    this.clientPos.x = ev.clientX;
+    this.clientPos.y = ev.clientY;
+  }
+
+  updatePos = () => {
+    this.updateDot();
     
+    this.updateStyle();
+
+    this.applyStyle();
+  }
+
+  // lint all style values
+  updateStyle = () => {
+    // lint size
+    this.size = this.lint(this.size, this.data.styles[this.activeStyle].size, this.snapSpeed);
+    this.cursorScaledPoints = this.data.points.map(p => new paper.Point(p.x * this.size, p.y * this.size));
+
+    // lint smooth?
+    // lint closed?
+    
+    // lint color and fill
     this.lintColor(this.color, this.data.styles[this.activeStyle].color, this.snapSpeed);
     this.lintColor(this.fillColor, this.data.styles[this.activeStyle].fill, this.snapSpeed);
 
-    this.updateCursor();
+    // lint points and group
+    if (this.activeStyle == "snap") {
+      this.lintPoints(this.stuckPoints);
+      this.lintPoint(this.pos, this.stuckGroup, this.snapSpeed);
+    }
+    else {
+      this.lintPoints(this.cursorScaledPoints);
+      this.lintPoint(this.pos, this.clientPos, this.speed);
+    }
   }
 
-  // update polygon with new style values
-  updateCursor = () => {
+  // apply cursor style to polygon
+  applyStyle = () => {
+    if (this.smooth)
+      this.polygon.smooth();
+    else
+      this.polygon.flatten(0);
+
+    this.polygon.closed = this.closed;
+
     this.polygon.strokeColor = this.toPaperColor(this.color);
     this.polygon.fillColor = this.toPaperColor(this.fillColor);
-  }
-
-  // moves cursor towards target (client)
-  lintGroupClient = (clientX, clientY) => {
-    this.pos.x = this.lint(this.pos.x, clientX, this.data.speed);
-    this.pos.y = this.lint(this.pos.y, clientY, this.data.speed);
+    
     this.group.position.set(this.pos.x, this.pos.y);
-  }
-
-  // moves cursor towards target (item)
-  lintGroupTarget = (targetX, targetY) => {
-    this.pos.x = this.lint(this.pos.x, targetX, this.data.snapSpeed);
-    this.pos.y = this.lint(this.pos.y, targetY, this.data.snapSpeed);
-    this.group.position.set(this.pos.x, this.pos.y);
-    if (this.data.styles.default.smooth)
-      this.polygon.smooth();
   }
 
   // updates polygon to have n points
@@ -77,16 +92,21 @@ class Cursor {
   }
 
   // moves points towards destination points
-  lintPoints = (points) => {
+  lintPoints = (targetPoints) => {
     this.polygon.segments.forEach((seg, i) => {
-      let nextX = this.lint(seg.point.x, points[i].x, this.data.snapSpeed);
-      let nextY = this.lint(seg.point.y, points[i].y, this.data.snapSpeed);
-      seg.point.set(nextX, nextY);
+      let pt = seg.point;
+      this.lintPoint(pt, targetPoints[i], this.data.snapSpeed);
+      seg.point.set(pt);
     });
-    if (this.data.styles.default.smooth)
-      this.polygon.smooth();
   }
 
+  // lints a point (a -> b with speed)
+  lintPoint = (a, b, speed) => {
+    a.x = this.lint(a.x, b.x, speed);
+    a.y = this.lint(a.y, b.y, speed);
+  }
+
+  // lints a color (a -> b with speed)
   lintColor = (a, b, speed) => {
     a.r = this.lint(a.r, b.r, speed);
     a.g = this.lint(a.g, b.g, speed);
@@ -95,9 +115,9 @@ class Cursor {
   }
 
   // updates the position of the dot if it is active
-  updateDot = (clientX, clientY) => {
+  updateDot = () => {
     if (this.dotActive)
-      this.dotGroup.position.set(clientX, clientY);
+      this.dotGroup.position.set(this.clientPos.x, this.clientPos.y);
     else
       this.dotGroup.position.set(-100, -100);
   }
@@ -123,7 +143,7 @@ class Cursor {
 
   unsnapRect = (ev) => {
     this.activeStyle = "default";
-    this.updateNPoints(this.cursorPoints.length);
+    this.updateNPoints(this.cursorScaledPoints.length);
   }
 
   // change cursor
@@ -148,22 +168,22 @@ class Cursor {
     this.speed = this.data.speed;
     this.snapSpeed = this.data.snapSpeed;
 
-    this.size = this.data.styles.default.size;
-    this.dotActive = this.data.styles.default.dotActive;
-    this.smooth = this.data.styles.default.smooth;
-    this.closed = this.data.styles.default.closed;
+    this.size = this.data.styles[this.activeStyle].size;
+    this.dotActive = this.data.styles[this.activeStyle].dotActive;
+    this.smooth = this.data.styles[this.activeStyle].smooth;
+    this.closed = this.data.styles[this.activeStyle].closed;
     this.color = {};
-    Object.assign(this.color, this.data.styles.default.color);
+    Object.assign(this.color, this.data.styles[this.activeStyle].color);
     this.fillColor = {};
-    Object.assign(this.fillColor, this.data.styles.default.fill);
-    this.cursorPoints = this.data.points.map(p => new paper.Point(p.x * this.size, p.y * this.size));
+    Object.assign(this.fillColor, this.data.styles[this.activeStyle].fill);
+    this.cursorScaledPoints = this.data.points.map(p => new paper.Point(p.x * this.size, p.y * this.size));
 
     if (this.polygon)
       this.polygon.remove();
 
     // create cursor
     this.polygon = new paper.Path({
-      segments: this.cursorPoints,
+      segments: this.cursorScaledPoints,
       strokeCap: 'round',
       strokeColor: this.toPaperColor(this.color),
       closed: this.closed,
@@ -177,5 +197,6 @@ class Cursor {
     });
   }
 
+  // converts between a color object and a paper.Color object
   toPaperColor = (color) => new paper.Color(color.r, color.g, color.b, color.a);
 }
