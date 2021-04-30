@@ -55,6 +55,7 @@ let cursorSet = [
       snap: {
         color: { r: 0, g: 1, b: 0, a: 1 },
         fill: { r: 0, g: 1, b: 0, a: 0.3 },
+        smooth: false
       }
     }
   }

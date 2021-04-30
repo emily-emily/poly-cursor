@@ -50,6 +50,8 @@ class Cursor {
 
     // lint smooth?
     // lint closed?
+    this.smooth = this.data.styles[this.activeStyle].smooth;
+    this.closed = this.data.styles[this.activeStyle].closed;
     
     // lint color and fill
     this.lintColor(this.color, this.data.styles[this.activeStyle].color, this.snapSpeed);
@@ -71,7 +73,7 @@ class Cursor {
     if (this.smooth)
       this.polygon.smooth();
     else
-      this.polygon.flatten(0);
+      this.polygon.flatten(100); // flatten error in pixels
 
     this.polygon.closed = this.closed;
 
@@ -124,7 +126,6 @@ class Cursor {
 
   snapRect = (ev) => {
     let itemBox = ev.currentTarget.getBoundingClientRect();
-    this.activeStyle = "snap";
 
     let wd2 = itemBox.width / 2;
     let hd2 = itemBox.height / 2;
@@ -139,6 +140,7 @@ class Cursor {
     ];
 
     this.updateNPoints(4);
+    this.activeStyle = "snap";
   }
 
   unsnapRect = (ev) => {
