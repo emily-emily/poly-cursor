@@ -1,5 +1,16 @@
 let sin45 = 1 / Math.SQRT2;
 
+// const defaultStyle = {
+//   size: 20,
+//   rotationSpeed: 0,
+//   dotActive: false,
+//   smooth: false,
+//   noisy: false,
+//   closed: true,
+//   color: { r: 1, g: 1, b: 1, a: 1 },
+//   fill: { r: 0, g: 0, b: 0, a: 0 }
+// }
+
 let cursorSet = [
   {
     name: "triangle",
@@ -16,6 +27,7 @@ let cursorSet = [
         rotationSpeed: 0,
         dotActive: false,
         smooth: false,
+        noisy: false,
         closed: true,
         color: { r: 1, g: 1, b: 1, a: 1 },
         fill: { r: 0, g: 0, b: 0, a: 0 }
@@ -24,12 +36,16 @@ let cursorSet = [
         size: 30,
         fill: { r: 1, g: 1, b: 1, a: 0.6 }
       },
-      snap: {
+      snapRect: {
         color: { r: 1, g: 0, b: 0.8, a: 1 },
         fill: { r: 1, g: 0, b: 0.8, a: 0.3 }
       },
       spin: {
         rotationSpeed: 10
+      },
+      snapFree: {
+        smooth: true,
+        noisy: true
       }
     }
   },
@@ -49,6 +65,7 @@ let cursorSet = [
         rotationSpeed: 0,
         dotActive: true,
         smooth: false,
+        noisy: false,
         closed: true,
         color: { r: 1, g: 1, b: 1, a: 1 },
         fill: { r: 0, g: 0, b: 0, a: 0 }
@@ -57,13 +74,16 @@ let cursorSet = [
         size: 20,
         fill: { r: 1, g: 1, b: 1, a: 0.6 }
       },
-      snap: {
+      snapRect: {
         color: { r: 1, g: 1, b: 0, a: 1 },
         fill: { r: 1, g: 1, b: 0, a: 0.3 },
         smooth: false
       },
       spin: {
         rotationSpeed: 5
+      },
+      snapFree: {
+        dotActive: false
       }
     }
   },
@@ -83,6 +103,7 @@ let cursorSet = [
         rotationSpeed: 0,
         dotActive: true,
         smooth: true,
+        noisy: false,
         closed: true,
         color: { r: 1, g: 1, b: 1, a: 1 },
         fill: { r: 0, g: 0, b: 0, a: 0 }
@@ -92,14 +113,15 @@ let cursorSet = [
         dotActive: false,
         fill: { r: 1, g: 1, b: 1, a: 0.6 }
       },
-      snap: {
+      snapRect: {
         dotActive: false,
         smooth: false,
         color: { r: 0, g: 1, b: 0, a: 1 },
         fill: { r: 0, g: 1, b: 0, a: 0.3 }
       },
-      spin: {
-        
+      spin: {},
+      snapFree: {
+        dotActive: false
       }
     }
   }

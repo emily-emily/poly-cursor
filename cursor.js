@@ -7,7 +7,11 @@ class Cursor {
   stuckGroup = {};
   angle = 0;
 
-  hovering = false;
+  noiseObjects = [];
+  evCount = 0; // for noise generating
+  noiseArr = []; // noise for each point (not scaled; range is -1 to 1)
+  noiseScale = 200; // noise speed
+  maxNoise = 20; // multiplied by noise
 
   constructor() {
     // init with default cursor
@@ -36,6 +40,7 @@ class Cursor {
   }
 
   updatePos = () => {
+    this.evCount++;
     this.updateStyle();
     this.applyStyle();
   }
@@ -47,6 +52,15 @@ class Cursor {
     // lint size
     this.size = this.lint(this.size, this.data.styles[this.activeStyle].size, this.snapSpeed);
     this.cursorScaledPoints = this.data.points.map(p => new paper.Point(p.x * this.size, p.y * this.size));
+
+    // update noise values
+    this.noisy = this.data.styles[this.activeStyle].noisy;
+    if (this.noisy) {
+      this.noiseArr.forEach((item, i) => {
+        item.x = this.noiseObjects[i].noise2D(this.evCount / this.noiseScale, 0);
+        item.y = this.noiseObjects[i].noise2D(this.evCount / this.noiseScale, 1);
+      });
+    }
 
     // lint smooth?
     // lint closed?
@@ -61,14 +75,16 @@ class Cursor {
     this.lintColor(this.fillColor, this.data.styles[this.activeStyle].fill, this.snapSpeed);
 
     // lint points and group
-    if (this.activeStyle == "snap") {
-      this.lintPoints(this.stuckPoints);
+    if (this.stuck) {
+      this.makeNoisyPoints(this.stuckPoints);
       this.lintPoint(this.pos, this.stuckGroup, this.snapSpeed);
     }
     else {
-      this.lintPoints(this.cursorScaledPoints);
+      this.makeNoisyPoints(this.cursorScaledPoints);
       this.lintPoint(this.pos, this.clientPos, this.speed);
     }
+
+    this.lintPoints(this.noisyPoints);
   }
 
   // apply cursor style to polygon
@@ -104,6 +120,9 @@ class Cursor {
 
   // updates polygon to have n points
   updateNPoints = (n) => {
+    // reset noise objects due to change in number of points
+    this.makeNoiseObjects(n);
+
     while (this.polygon.segments.length < n) {
       this.polygon.add(new paper.Point(this.polygon.lastSegment.point));
     }
@@ -135,10 +154,11 @@ class Cursor {
     a.a = this.lint(a.a, b.a, speed);
   }
 
-  // updates the active style
+  // updates the active style (called by client)
   setStyle = (style, ev = null) => {
     // handle snap
-    if (this.activeStyle == "default" && style == "snap") {
+    if (style == "snapRect" || style == "snapFree"){
+      // set target
       let itemBox = ev.currentTarget.getBoundingClientRect();
   
       let wd2 = itemBox.width / 2;
@@ -146,21 +166,76 @@ class Cursor {
   
       this.stuckGroup.x = itemBox.left + wd2;
       this.stuckGroup.y = itemBox.top + hd2;
-      this.stuckPoints = [
-        { x: -wd2, y: -hd2 },
-        { x: wd2, y: -hd2 },
-        { x: wd2, y: hd2 },
-        { x: -wd2, y: hd2 }
-      ];
-  
-      this.updateNPoints(4);
+
+      if (style == "snapRect") {
+        this.stuckPoints = [
+          { x: -wd2, y: -hd2 },
+          { x: wd2, y: -hd2 },
+          { x: wd2, y: hd2 },
+          { x: -wd2, y: hd2 }
+        ];
+
+        // this.stuckPoints = [
+        //   { x: -wd2, y: -hd2 },
+        //   { x: 0, y: -hd2 },
+        //   { x: wd2, y: -hd2 },
+        //   { x: wd2, y: 0 },
+        //   { x: wd2, y: hd2 },
+        //   { x: 0, y: hd2 },
+        //   { x: -wd2, y: hd2 },
+        //   { x: -wd2, y: 0 }
+        // ];
+
+        this.updateNPoints(4);
+      }
+      if (style == "snapFree") {
+        let points = 8;
+
+        // use larger length
+        let len = wd2 > hd2 ? wd2 : hd2;
+        // give some space
+        len *= 1.2;
+
+        let deg360 = Math.PI * 2;
+
+        this.stuckPoints = [];
+
+        for (let i = 0; i < points; i++) {
+          let deg = deg360 / points * i + Math.PI;
+          this.stuckPoints.push({ x: len * Math.cos(deg), y: len * Math.sin(deg) });
+        }
+
+        this.updateNPoints(points);
+      }
+
+      this.stuck = true;
     }
-    if (this.activeStyle == "snap" && style == "default") {
-      this.activeStyle = "default";
+    if (style == "default") {
+      this.stuck = false;
       this.updateNPoints(this.cursorScaledPoints.length);
     }
 
     this.activeStyle = style;
+  }
+
+  // makes noise objects for n points
+  makeNoiseObjects = (n) => {
+    this.noiseObjects = [];
+    this.noiseArr = [];
+    for (let i = 0; i < n; i++) {
+      this.noiseObjects.push(new SimplexNoise());
+      this.noiseArr.push({ x: 0, y: 0 });
+    }
+  }
+
+  makeNoisyPoints = (points) => {
+    this.noisyPoints = points.slice();
+    this.noisyPoints = this.noisyPoints.map((pt, i) => {
+      return {
+        x: pt.x + this.noiseArr[i].x * this.maxNoise,
+        y: pt.y + this.noiseArr[i].y * this.maxNoise
+      }
+    });
   }
 
   // change cursor
@@ -169,7 +244,7 @@ class Cursor {
     this.data = newData;
 
     // reset angle
-    this.angle = 0;
+    this.angle = 359.9999;
 
     // fill in styles with default
     for (let [key, value] of Object.entries(this.data.styles)) {
@@ -192,12 +267,14 @@ class Cursor {
     this.rotationSpeed = this.data.styles[this.activeStyle].rotationSpeed;
     this.dotActive = this.data.styles[this.activeStyle].dotActive;
     this.smooth = this.data.styles[this.activeStyle].smooth;
+    this.noisy = this.data.styles[this.activeStyle].noisy;
     this.closed = this.data.styles[this.activeStyle].closed;
     this.color = {};
     Object.assign(this.color, this.data.styles[this.activeStyle].color);
     this.fillColor = {};
     Object.assign(this.fillColor, this.data.styles[this.activeStyle].fill);
     this.cursorScaledPoints = this.data.points.map(p => new paper.Point(p.x * this.size, p.y * this.size));
+    this.noisyPoints = this.cursorScaledPoints.slice();
 
     if (this.polygon)
       this.polygon.remove();
@@ -216,6 +293,8 @@ class Cursor {
       position: new paper.Point(0, 0),
       applyMatrix: false
     });
+
+    this.makeNoiseObjects(this.cursorScaledPoints.length);
   }
 
   // converts between a color object and a paper.Color object
