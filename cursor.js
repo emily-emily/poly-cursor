@@ -1,10 +1,29 @@
+/**
+ * Cursor stores a cursor and all of its relevant information.
+ * 
+ * To create a new cursor:
+ *    let cursor = new Cursor();
+ * Note that the paper.js canvas must be set up in order to create a new Cursor object.
+ * 
+ * Required set-up steps:
+ *  * cursor.updateClientPos(ev) with the onmousemove event to update the client position
+ *  * cursor.updatePos() in the paper.js loop to update the cursor
+ *  * cursor.setStyle("styleName") to update the cursor's style
+ *  * cursor.setSnapTarget(snapBoundingBox) before snapping to an element (only required when using snap)
+ * 
+ * TODO:
+ *  * update Cursor constructor to take a set
+ *  * bring client position listener inside the class?
+ * **/
+
 class Cursor {
   pos = { x: -100, y: -100 };
   clientPos = { x: -100, y: -100 };
   activeStyle = "default";
   stuck = false;
-  stuckPoints = [];
-  stuckGroup = {};
+  stuckPoints = []; // shape of cursor when stuck
+  stuckGroup = { x: 0, y: 0 }; // location of cursor when stuck
+  target = null; // target to snap to (bounding box)
   angle = 0;
 
   noiseObjects = [];
@@ -66,6 +85,14 @@ class Cursor {
     // lint closed?
     this.smooth = this.data.styles[this.activeStyle].smooth;
     this.closed = this.data.styles[this.activeStyle].closed;
+
+    this.snap = this.data.styles[this.activeStyle].snap;
+    if (this.snap == "rect" || this.snap == "free") {
+      this.stuck = true;
+    }
+    else {
+      this.stuck = false;
+    }
 
     // lint rotation?
     this.rotationSpeed = this.data.styles[this.activeStyle].rotationSpeed;
@@ -154,62 +181,55 @@ class Cursor {
     a.a = this.lint(a.a, b.a, speed);
   }
 
+  setSnapTarget = (item) => {
+    this.target = item;
+    this.stuckGroup.x = item.left + item.width / 2;
+    this.stuckGroup.y = item.top + item.height / 2;
+  }
+
   // updates the active style (called by client)
-  setStyle = (style, ev = null) => {
+  setStyle = (style) => {
+    // check for missing style
+    this.fixMissingStyle(style);
+
     // handle snap
-    if (style == "snapRect" || style == "snapFree"){
-      // set target
-      let itemBox = ev.currentTarget.getBoundingClientRect();
-  
-      let wd2 = itemBox.width / 2;
-      let hd2 = itemBox.height / 2;
-  
-      this.stuckGroup.x = itemBox.left + wd2;
-      this.stuckGroup.y = itemBox.top + hd2;
+    if (this.data.styles[style].snap == "rect") {
+      let wd2 = this.target.width / 2;
+      let hd2 = this.target.height / 2;
 
-      if (style == "snapRect") {
-        this.stuckPoints = [
-          { x: -wd2, y: -hd2 },
-          { x: wd2, y: -hd2 },
-          { x: wd2, y: hd2 },
-          { x: -wd2, y: hd2 }
-        ];
+      this.stuckPoints = [
+        { x: -wd2, y: -hd2 },
+        { x: wd2, y: -hd2 },
+        { x: wd2, y: hd2 },
+        { x: -wd2, y: hd2 }
+      ];
 
-        // this.stuckPoints = [
-        //   { x: -wd2, y: -hd2 },
-        //   { x: 0, y: -hd2 },
-        //   { x: wd2, y: -hd2 },
-        //   { x: wd2, y: 0 },
-        //   { x: wd2, y: hd2 },
-        //   { x: 0, y: hd2 },
-        //   { x: -wd2, y: hd2 },
-        //   { x: -wd2, y: 0 }
-        // ];
-
-        this.updateNPoints(4);
-      }
-      if (style == "snapFree") {
-        let points = 8;
-
-        // use larger length
-        let len = wd2 > hd2 ? wd2 : hd2;
-        // give some space
-        len *= 1.2;
-
-        let deg360 = Math.PI * 2;
-
-        this.stuckPoints = [];
-
-        for (let i = 0; i < points; i++) {
-          let deg = deg360 / points * i + Math.PI;
-          this.stuckPoints.push({ x: len * Math.cos(deg), y: len * Math.sin(deg) });
-        }
-
-        this.updateNPoints(points);
-      }
-
-      this.stuck = true;
+      this.updateNPoints(4);
     }
+    else if (this.data.styles[style].snap == "free") {
+      let wd2 = this.target.width / 2;
+      let hd2 = this.target.height / 2;
+
+      let points = 8;
+
+      // use larger length
+      let len = wd2 > hd2 ? wd2 : hd2;
+      // give some space
+      len *= 1.2;
+
+      let deg360 = Math.PI * 2;
+
+      this.stuckPoints = [];
+
+      for (let i = 0; i < points; i++) {
+        let deg = deg360 / points * i + Math.PI;
+        this.stuckPoints.push({ x: len * Math.cos(deg), y: len * Math.sin(deg) });
+      }
+
+      this.updateNPoints(points);
+    }
+
+
     if (style == "default") {
       this.stuck = false;
       this.updateNPoints(this.cursorScaledPoints.length);
@@ -238,25 +258,38 @@ class Cursor {
     });
   }
 
+  fixMissingStyle = (style) => {
+    // copy "default" style if style does not exist
+    if (!(style in this.data.styles)) {
+      let styleCopy = {};
+      Object.assign(styleCopy, defaultStyle);
+      Object.assign(styleCopy, this.data.styles.default);
+      this.data.styles[style] = styleCopy;
+    }
+  }
+
   // change cursor
   changeCursor = (newData) => {
     // save style
     this.data = newData;
 
+    // check for missing style
+    this.fixMissingStyle(this.activeStyle);
+
     // reset angle
     this.angle = 359.9999;
 
     // fill in styles with default
-    for (let [key, value] of Object.entries(this.data.styles)) {
-      if (key == "default") continue;
-
+    for (let [name, style] of Object.entries(this.data.styles)) {
       let styleCopy = {};
+      Object.assign(styleCopy, defaultStyle);
       Object.assign(styleCopy, this.data.styles.default);
-      for (let [k, s] of Object.entries(value)) {
-        styleCopy[k] = s;
+
+      if (name != "default") {
+        Object.assign(styleCopy, style);
       }
 
-      this.data.styles[key] = styleCopy;
+      this.data.styles[name] = styleCopy;
     }
 
     // copy style to current values
@@ -269,6 +302,7 @@ class Cursor {
     this.smooth = this.data.styles[this.activeStyle].smooth;
     this.noisy = this.data.styles[this.activeStyle].noisy;
     this.closed = this.data.styles[this.activeStyle].closed;
+    this.snap = this.data.styles[this.activeStyle].snap;
     this.color = {};
     Object.assign(this.color, this.data.styles[this.activeStyle].color);
     this.fillColor = {};
