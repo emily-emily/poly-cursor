@@ -1,6 +1,8 @@
 # poly-cursor
 
-Interesting cursors and effects
+Interesting cursors and effects.
+
+[Demo](https://emily-emily.github.io/poly-cursor/)
  
 ## Made with
 - paper.js
