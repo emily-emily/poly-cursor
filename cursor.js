@@ -2,18 +2,14 @@
  * Cursor stores a cursor and all of its relevant information.
  * 
  * To create a new cursor:
- *    let cursor = new Cursor();
+ *    let cursor = new Cursor(cursorStyle);
+ *    --> cursorStyle follows the examples in cursor-set.js
  * Note that the paper.js canvas must be set up in order to create a new Cursor object.
  * 
  * Required set-up steps:
- *  * cursor.updateClientPos(ev) with the onmousemove event to update the client position
- *  * cursor.updatePos() in the paper.js loop to update the cursor
  *  * cursor.setStyle("styleName") to update the cursor's style
+ *    --> remember to change back to default after switching to a special style
  *  * cursor.setSnapTarget(snapBoundingBox) before snapping to an element (only required when using snap)
- * 
- * TODO:
- *  * update Cursor constructor to take a set
- *  * bring client position listener inside the class?
  * **/
 
 class Cursor {
@@ -22,7 +18,7 @@ class Cursor {
   activeStyle = "default";
   stuck = false;
   stuckPoints = []; // shape of cursor when stuck
-  stuckGroup = { x: 0, y: 0 }; // location of cursor when stuck
+  stuckGroup = { x: 0, y: 0 }; // location of cursor when stuck (center of shape)
   target = null; // target to snap to (bounding box)
   angle = 0;
 
@@ -32,9 +28,22 @@ class Cursor {
   noiseScale = 200; // noise speed
   maxNoise = 20; // multiplied by noise
 
-  constructor() {
+  constructor(cursorStyle) {
+    // setup paper canvas
+    paper.setup(document.querySelector("#cursor-canvas"));
+
+    // paper loop prompts cursor to update position each frame
+    paper.view.onFrame = ev => {
+      cursor.updatePos();
+    };
+
+    // event listener for mouse move
+    document.addEventListener("mousemove", ev => {
+      this.updateClientPos(ev);
+    });
+
     // init with default cursor
-    this.changeCursor(cursorSet[0]);
+    this.changeCursor(cursorStyle);
 
     // cursor dot
     this.dot = new paper.Path.RegularPolygon(new paper.Point(0, 0), 4, 2);
@@ -45,6 +54,9 @@ class Cursor {
       position: new paper.Point(0, 0),
       applyMatrix: false
     });
+    
+    // noise objects
+    this.makeNoiseObjects(this.cursorScaledPoints.length);
   }
 
   // linear interpolation function
@@ -282,12 +294,13 @@ class Cursor {
     // fill in styles with default
     for (let [name, style] of Object.entries(this.data.styles)) {
       let styleCopy = {};
+      Object.assign(styleCopy, style);
+      // populate copy with filler data
       Object.assign(styleCopy, defaultStyle);
       Object.assign(styleCopy, this.data.styles.default);
 
-      if (name != "default") {
-        Object.assign(styleCopy, style);
-      }
+      // overwrite with new style
+      Object.assign(styleCopy, style);
 
       this.data.styles[name] = styleCopy;
     }
@@ -310,10 +323,11 @@ class Cursor {
     this.cursorScaledPoints = this.data.points.map(p => new paper.Point(p.x * this.size, p.y * this.size));
     this.noisyPoints = this.cursorScaledPoints.slice();
 
+    // remove old cursor
     if (this.polygon)
       this.polygon.remove();
 
-    // create cursor
+    // create new cursor
     this.polygon = new paper.Path({
       segments: this.cursorScaledPoints,
       strokeCap: 'round',
@@ -327,8 +341,6 @@ class Cursor {
       position: new paper.Point(0, 0),
       applyMatrix: false
     });
-
-    this.makeNoiseObjects(this.cursorScaledPoints.length);
   }
 
   // converts between a color object and a paper.Color object
