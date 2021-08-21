@@ -6,7 +6,7 @@
  *    --> cursorStyle follows the examples in cursor-set.js
  * Note that the paper.js canvas must be set up in order to create a new Cursor object.
  * 
- * Required set-up steps:
+ * Usage:
  *  * cursor.setStyle("styleName") to update the cursor's style
  *    --> remember to change back to default after switching to a special style
  *  * cursor.setSnapTarget(snapBoundingBox) before snapping to an element (only required when using snap)
@@ -115,7 +115,9 @@ class Cursor {
 
     // lint points and group
     if (this.stuck) {
+      // update noise
       this.makeNoisyPoints(this.stuckPoints);
+      // move group
       this.lintPoint(this.pos, this.stuckGroup, this.snapSpeed);
     }
     else {
@@ -193,6 +195,7 @@ class Cursor {
     a.a = this.lint(a.a, b.a, speed);
   }
 
+  // saves the coordinates of the centre of an element
   setSnapTarget = (item) => {
     this.target = item;
     this.stuckGroup.x = item.left + item.width / 2;
@@ -201,8 +204,9 @@ class Cursor {
 
   // updates the active style (called by client)
   setStyle = (style) => {
-    // check for missing style
-    this.fixMissingStyle(style);
+    // if style is missing, set to default
+    if (!(style in this.data.styles))
+      style = "default";
 
     // handle snap
     if (this.data.styles[style].snap == "rect") {
@@ -260,6 +264,7 @@ class Cursor {
     }
   }
 
+  // calculates points with new noise and stores in this.noisyPoints
   makeNoisyPoints = (points) => {
     this.noisyPoints = points.slice();
     this.noisyPoints = this.noisyPoints.map((pt, i) => {
@@ -270,23 +275,21 @@ class Cursor {
     });
   }
 
-  fixMissingStyle = (style) => {
-    // copy "default" style if style does not exist
-    if (!(style in this.data.styles)) {
-      let styleCopy = {};
-      Object.assign(styleCopy, defaultStyle);
-      Object.assign(styleCopy, this.data.styles.default);
-      this.data.styles[style] = styleCopy;
-    }
-  }
-
   // change cursor
   changeCursor = (newData) => {
     // save style
     this.data = newData;
 
-    // check for missing style
-    this.fixMissingStyle(this.activeStyle);
+    // set default style if missing
+    if (!("default" in this.data.styles)) {
+      let defaultCopy = {};
+      Object.assign(defaultCopy, defaultStyle);
+      this.data.styles.default = defaultCopy;
+    }
+
+    // if current active style is missing, set to default
+    if (!(this.activeStyle in this.data.styles))
+      this.activeStyle = "default";
 
     // reset angle
     this.angle = 359.9999;
