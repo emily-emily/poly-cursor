@@ -21,7 +21,8 @@ class Cursor {
   clientPos = { x: -100, y: -100 };
   activeStyle = "default";
   stuck = false;
-  stuckPoints = []; // shape of cursor when stuck
+  targetPoints = []; // target cursor shape
+  noisyTargetPoints = []; // target cursor shape with noise applied (final)
   stuckGroup = { x: 0, y: 0 }; // location of cursor when stuck (center of shape)
   target = null; // target to snap to (bounding box)
   angle = 0;
@@ -61,7 +62,7 @@ class Cursor {
     });
     
     // noise objects
-    this.makeNoiseObjects(this.cursorScaledPoints.length);
+    this.makeNoiseObjects(this.targetPoints.length);
   }
 
   // linear interpolation function
@@ -87,7 +88,6 @@ class Cursor {
 
     // lint size
     this.size = this.lint(this.size, this.data.styles[this.activeStyle].size, this.snapSpeed);
-    this.cursorScaledPoints = this.data.points.map(p => new paper.Point(p.x * this.size, p.y * this.size));
 
     // update noise values
     this.noisy = this.data.styles[this.activeStyle].noisy;
@@ -98,8 +98,6 @@ class Cursor {
       });
     }
 
-    // lint smooth?
-    // lint closed?
     this.smooth = this.data.styles[this.activeStyle].smooth;
     this.closed = this.data.styles[this.activeStyle].closed;
 
@@ -118,24 +116,22 @@ class Cursor {
     this.lintColor(this.color, this.data.styles[this.activeStyle].color, this.snapSpeed);
     this.lintColor(this.fillColor, this.data.styles[this.activeStyle].fill, this.snapSpeed);
 
-    // lint points and group
-    if (this.stuck) {
-      // update noise
-      this.makeNoisyPoints(this.stuckPoints);
-      // move group
-      this.lintPoint(this.pos, this.stuckGroup, this.snapSpeed);
-    }
-    else {
-      this.makeNoisyPoints(this.cursorScaledPoints);
-      this.lintPoint(this.pos, this.clientPos, this.speed);
-    }
+    // update noise
+    this.makeNoisyPoints(this.targetPoints);
 
-    this.lintPoints(this.noisyPoints);
+    // lint group
+    if (this.stuck)
+      this.lintPoint(this.pos, this.stuckGroup, this.snapSpeed);
+    else 
+      this.lintPoint(this.pos, this.clientPos, this.speed);
+
+    // lint points
+    this.lintPoints(this.noisyTargetPoints);
   }
 
   // apply cursor style to polygon
   applyStyle = () => {
-    if (this.data.points.length == 0) return;
+    if (this.targetPoints.length == 0) return;
     // set dot to client position if active
     if (this.dotActive)
       this.dotGroup.position.set(this.clientPos.x, this.clientPos.y);
@@ -152,7 +148,7 @@ class Cursor {
 
     this.polygon.closed = this.closed;
 
-    if (this.activeStyle == "spin"){
+    if (this.rotationSpeed != 0){
       this.group.rotate(this.rotationSpeed);
       this.angle = (this.angle + this.rotationSpeed) % 360;
     }
@@ -220,12 +216,16 @@ class Cursor {
     if (!(style in this.data.styles))
       style = "default";
 
+    // update points
+    this.targetPoints = this.data.styles[style].points.map(p => new paper.Point(p.x * this.size, p.y * this.size));
+    this.updateNPoints(this.targetPoints.length);
+
     // handle snap
     if (this.data.styles[style].snap == "rect") {
       let wd2 = this.target.width / 2;
       let hd2 = this.target.height / 2;
 
-      this.stuckPoints = [
+      this.targetPoints = [
         { x: -wd2, y: -hd2 },
         { x: wd2, y: -hd2 },
         { x: wd2, y: hd2 },
@@ -247,11 +247,11 @@ class Cursor {
 
       let deg360 = Math.PI * 2;
 
-      this.stuckPoints = [];
+      this.targetPoints = [];
 
       for (let i = 0; i < points; i++) {
         let deg = deg360 / points * i + Math.PI;
-        this.stuckPoints.push({ x: len * Math.cos(deg), y: len * Math.sin(deg) });
+        this.targetPoints.push({ x: len * Math.cos(deg), y: len * Math.sin(deg) });
       }
 
       this.updateNPoints(points);
@@ -260,7 +260,7 @@ class Cursor {
 
     if (style == "default") {
       this.stuck = false;
-      this.updateNPoints(this.cursorScaledPoints.length);
+      this.updateNPoints(this.targetPoints.length);
     }
 
     this.activeStyle = style;
@@ -276,10 +276,10 @@ class Cursor {
     }
   }
 
-  // calculates points with new noise and stores in this.noisyPoints
+  // calculates points with new noise and stores in this.noisyTargetPoints
   makeNoisyPoints = (points) => {
-    this.noisyPoints = points.slice();
-    this.noisyPoints = this.noisyPoints.map((pt, i) => {
+    this.noisyTargetPoints = points.slice();
+    this.noisyTargetPoints = this.noisyTargetPoints.map((pt, i) => {
       return {
         x: pt.x + this.noiseArr[i].x * this.maxNoise,
         y: pt.y + this.noiseArr[i].y * this.maxNoise
@@ -336,19 +336,15 @@ class Cursor {
     this.speed = this.data.speed;
     this.snapSpeed = this.data.snapSpeed;
 
-    this.size = this.data.styles[this.activeStyle].size;
-    this.rotationSpeed = this.data.styles[this.activeStyle].rotationSpeed;
-    this.dotActive = this.data.styles[this.activeStyle].dotActive;
-    this.smooth = this.data.styles[this.activeStyle].smooth;
-    this.noisy = this.data.styles[this.activeStyle].noisy;
-    this.closed = this.data.styles[this.activeStyle].closed;
-    this.snap = this.data.styles[this.activeStyle].snap;
+    for (let prop in defaultStyle) {
+      this[prop] = this.data.styles[this.activeStyle][prop];
+    }
     this.color = {};
     Object.assign(this.color, this.data.styles[this.activeStyle].color);
     this.fillColor = {};
     Object.assign(this.fillColor, this.data.styles[this.activeStyle].fill);
-    this.cursorScaledPoints = this.data.points.map(p => new paper.Point(p.x * this.size, p.y * this.size));
-    this.noisyPoints = this.cursorScaledPoints.slice();
+    this.targetPoints = this.data.styles[this.activeStyle].points.map(p => new paper.Point(p.x * this.size, p.y * this.size));
+    this.noisyTargetPoints = this.targetPoints.slice();
 
     // remove old cursor
     if (this.polygon)
@@ -356,7 +352,7 @@ class Cursor {
 
     // create new cursor
     this.polygon = new paper.Path({
-      segments: this.cursorScaledPoints,
+      segments: this.targetPoints,
       strokeCap: 'round',
       strokeColor: this.toPaperColor(this.color),
       closed: this.closed,

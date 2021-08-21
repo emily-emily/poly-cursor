@@ -4,11 +4,11 @@ const defaultSyleset = {
   name: "",
   speed: 1,
   snapSpeed: 0.25,
-  points: [],
   styles: {}
 };
 
 const defaultStyle = {
+  points: [],
   size: 20,
   rotationSpeed: 0,
   dotActive: true,
@@ -27,13 +27,13 @@ const defaultStyle = {
 let cursorSet = [
   {
     name: "triangle",
-    points: [
-      { x: 0, y: 0 },
-      { x: sin45, y: sin45 },
-      { x: 0, y: 1 }
-    ],
     styles: {
       default: {
+        points: [
+          { x: 0, y: 0 },
+          { x: sin45, y: sin45 },
+          { x: 0, y: 1 }
+        ],
         dotActive: false,
         color: { r: 1, g: 1, b: 1, a: 1 }
       },
@@ -60,14 +60,14 @@ let cursorSet = [
     name: "diamond",
     speed: 0.2,
     snapSpeed: 0.2,
-    points: [
-      { x: 0, y: -1 },
-      { x: 1, y: 0 },
-      { x: 0, y: 1 },
-      { x: -1, y: 0 }
-    ],
     styles: {
       default: {
+        points: [
+          { x: 0, y: -1 },
+          { x: 1, y: 0 },
+          { x: 0, y: 1 },
+          { x: -1, y: 0 }
+        ],
         size: 15,
         color: { r: 1, g: 1, b: 1, a: 1 }
       },
@@ -95,14 +95,14 @@ let cursorSet = [
     name: "circle",
     speed: 0.2,
     snapSpeed: 0.2,
-    points: [
-      { x: 0, y: -1 },
-      { x: 1, y: 0 },
-      { x: 0, y: 1 },
-      { x: -1, y: 0 }
-    ],
     styles: {
       default: {
+        points: [
+          { x: 0, y: -1 },
+          { x: 1, y: 0 },
+          { x: 0, y: 1 },
+          { x: -1, y: 0 }
+        ],
         size: 15,
         dotActive: true,
         smooth: true,
@@ -118,6 +118,20 @@ let cursorSet = [
         smooth: false,
         color: { r: 0, g: 1, b: 0, a: 1 },
         fill: { r: 0, g: 1, b: 0, a: 0.3 }
+      },
+      spin: {
+        points: [
+          { x: 0, y: -1 },
+          { x: 0.35, y: -0.35 },
+          { x: 1, y: 0 },
+          { x: 0.35, y: 0.35 },
+          { x: 0, y: 1 },
+          { x: -0.35, y: 0.35 },
+          { x: -1, y: 0 },
+          { x: -0.35, y: -0.35 }
+        ],
+        smooth: false,
+        rotationSpeed: 5
       },
       snapFree: {
         snap: "free",
