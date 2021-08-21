@@ -275,10 +275,14 @@ class Cursor {
     });
   }
 
-  // change cursor
-  changeCursor = (newData) => {
-    // save style
-    this.data = newData;
+  // checks to see if information is missing from this.data and fixes it
+  patchData = () => {
+    // add missing properties of styleset
+    for (let key in defaultSyleset) {
+      if (!(key in this.data)) {
+        this.data[key] = defaultSyleset[key];
+      }
+    }
 
     // set default style if missing
     if (!("default" in this.data.styles)) {
@@ -287,14 +291,7 @@ class Cursor {
       this.data.styles.default = defaultCopy;
     }
 
-    // if current active style is missing, set to default
-    if (!(this.activeStyle in this.data.styles))
-      this.activeStyle = "default";
-
-    // reset angle
-    this.angle = 359.9999;
-
-    // fill in styles with default
+    // fill in incomplete styles with default
     for (let [name, style] of Object.entries(this.data.styles)) {
       let styleCopy = {};
       Object.assign(styleCopy, style);
@@ -307,6 +304,21 @@ class Cursor {
 
       this.data.styles[name] = styleCopy;
     }
+  }
+
+  // change cursor
+  changeCursor = (newData) => {
+    // save style
+    this.data = newData;
+
+    this.patchData();
+
+    // if current active style is missing, set to default
+    if (!(this.activeStyle in this.data.styles))
+      this.activeStyle = "default";
+
+    // reset angle
+    this.angle = 359.9999;
 
     // copy style to current values
     this.speed = this.data.speed;
@@ -344,6 +356,9 @@ class Cursor {
       position: new paper.Point(0, 0),
       applyMatrix: false
     });
+
+    // set the style to update the cursor appropriately
+    this.setStyle(this.activeStyle);
   }
 
   // converts between a color object and a paper.Color object
