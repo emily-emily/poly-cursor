@@ -4,19 +4,19 @@ const defaultSyleset = {
   name: "",
   speed: 1,
   snapSpeed: 0.25,
-  points: [{ x: 0, y: 0 }],
+  points: [],
   styles: {}
 };
 
 const defaultStyle = {
   size: 20,
   rotationSpeed: 0,
-  dotActive: false,
+  dotActive: true,
   smooth: false,
   noisy: false,
   closed: true,
   snap: null,
-  color: { r: 1, g: 1, b: 1, a: 1 },
+  color: { r: 0, g: 0, b: 0, a: 0 },
   fill: { r: 0, g: 0, b: 0, a: 0 }
 };
 
@@ -33,6 +33,10 @@ let cursorSet = [
       { x: 0, y: 1 }
     ],
     styles: {
+      default: {
+        dotActive: false,
+        color: { r: 1, g: 1, b: 1, a: 1 }
+      },
       hover: {
         size: 30,
         fill: { r: 1, g: 1, b: 1, a: 0.6 }
@@ -65,7 +69,7 @@ let cursorSet = [
     styles: {
       default: {
         size: 15,
-        dotActive: true
+        color: { r: 1, g: 1, b: 1, a: 1 }
       },
       hover: {
         size: 20,
@@ -73,6 +77,7 @@ let cursorSet = [
       },
       snapRect: {
         snap: "rect",
+        dotActive: false,
         color: { r: 1, g: 1, b: 0, a: 1 },
         fill: { r: 1, g: 1, b: 0, a: 0.3 },
         smooth: false
@@ -100,11 +105,11 @@ let cursorSet = [
       default: {
         size: 15,
         dotActive: true,
-        smooth: true
+        smooth: true,
+        color: { r: 1, g: 1, b: 1, a: 1 }
       },
       hover: {
         size: 20,
-        dotActive: false,
         fill: { r: 1, g: 1, b: 1, a: 0.6 }
       },
       snapRect: {

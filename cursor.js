@@ -10,6 +10,10 @@
  *  * cursor.setStyle("styleName") to update the cursor's style
  *    --> remember to change back to default after switching to a special style
  *  * cursor.setSnapTarget(snapBoundingBox) before snapping to an element (only required when using snap)
+ * 
+ * TODO:
+ *  * move points to style (instead of styleset)
+ *  * line width?
  * **/
 
 class Cursor {
@@ -47,7 +51,8 @@ class Cursor {
 
     // cursor dot
     this.dot = new paper.Path.RegularPolygon(new paper.Point(0, 0), 4, 2);
-    this.dot.fillColor = 'white';
+    this.dot.strokeColor = this.toPaperColor(this.color);
+    this.dot.fillColor = this.toPaperColor(this.color);
     this.dot.smooth();
     this.dotGroup = new paper.Group({
       children: [this.dot],
@@ -130,16 +135,20 @@ class Cursor {
 
   // apply cursor style to polygon
   applyStyle = () => {
+    if (this.data.points.length == 0) return;
     // set dot to client position if active
     if (this.dotActive)
       this.dotGroup.position.set(this.clientPos.x, this.clientPos.y);
     else
       this.dotGroup.position.set(-100, -100);
 
-    if (this.smooth)
-      this.polygon.smooth();
-    else
-      this.polygon.flatten(100); // flatten error in pixels
+    // smooth/flatten can only be applied if it is a polygon
+    if (this.polygon.segments.length > 2) {
+      if (this.smooth)
+        this.polygon.smooth();
+      else
+        this.polygon.flatten(100); // flatten error in pixels
+    }
 
     this.polygon.closed = this.closed;
 
@@ -165,7 +174,10 @@ class Cursor {
     this.makeNoiseObjects(n);
 
     while (this.polygon.segments.length < n) {
-      this.polygon.add(new paper.Point(this.polygon.lastSegment.point));
+      if (this.polygon.segments.length == 0) 
+        this.polygon.add(new paper.Point(this.clientPos));
+      else
+        this.polygon.add(new paper.Point(this.polygon.lastSegment.point));
     }
     while (this.polygon.segments.length > n) {
       this.polygon.removeSegment(this.polygon.segments.length - 1);
