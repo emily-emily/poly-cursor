@@ -22,16 +22,6 @@ const defaultStyle = {
 /**
  * Cursor stores a cursor and all of its relevant information.
  * 
- * To create a new cursor:
- *    let cursor = new Cursor(cursorStyle);
- *    --> cursorStyle follows the examples in cursor-set.js
- * Note that the paper.js canvas must be set up in order to create a new Cursor object.
- * 
- * Usage:
- *  * cursor.setStyle("styleName") to update the cursor's style
- *    --> remember to change back to default after switching to a special style
- *  * cursor.setSnapTarget(snapBoundingBox) before snapping to an element (only required when using snap)
- * 
  * TODO:
  *  * line width?
  *  * noise levels based on size
@@ -402,4 +392,17 @@ class Cursor {
 
   // converts between a color object and a paper.Color object
   toPaperColor = (color) => new paper.Color(color.r, color.g, color.b, color.a);
+}
+
+let setHoverListeners = () => {
+  document.querySelectorAll("[class*=cursor-]").forEach(item => {
+    let styleName = item.className.split(' ').filter(c => c.startsWith("cursor-"))[0].substr(7);
+    item.addEventListener("mouseenter", ev => {
+      cursor.setSnapTarget(ev.currentTarget.getBoundingClientRect());
+      cursor.setStyle(styleName);
+    })
+    item.addEventListener("mouseleave", ev => {
+      cursor.setStyle("default");
+    })
+  });
 }
