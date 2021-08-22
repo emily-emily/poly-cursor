@@ -34,19 +34,18 @@ const defaultStyle = {
  * 
  * TODO:
  *  * line width?
- *  * reorganize data: this.current, this.target
  *  * noise levels based on size
  * **/
 
 class Cursor {
-  pos = { x: -100, y: -100 };
+  pos = { x: -100, y: -100 }; // group pos
   clientPos = { x: -100, y: -100 };
   activeStyle = "default";
   stuck = false;
   targetPoints = []; // target cursor shape
   noisyTargetPoints = []; // target cursor shape with noise applied (final)
   stuckGroup = { x: 0, y: 0 }; // location of cursor when stuck (center of shape)
-  target = null; // target to snap to (bounding box)
+  targetObj = null; // target to snap to (bounding box)
   angle = 0;
 
   noiseObjects = [];
@@ -54,6 +53,9 @@ class Cursor {
   noiseArr = []; // noise for each point (not scaled; range is -1 to 1)
   noiseScale = 200; // noise speed
   maxNoise = 20; // multiplied by noise
+
+  target = {};
+  current = {};
 
   constructor(cursorStyle) {
     // setup paper canvas
@@ -74,8 +76,8 @@ class Cursor {
 
     // cursor dot
     this.dot = new paper.Path.RegularPolygon(new paper.Point(0, 0), 4, 2);
-    this.dot.strokeColor = this.toPaperColor(this.color);
-    this.dot.fillColor = this.toPaperColor(this.color);
+    this.dot.strokeColor = this.toPaperColor(this.current.color);
+    this.dot.fillColor = this.toPaperColor(this.current.color);
     this.dot.smooth();
     this.dotGroup = new paper.Group({
       children: [this.dot],
@@ -84,7 +86,7 @@ class Cursor {
     });
     
     // noise objects
-    this.makeNoiseObjects(this.targetPoints.length);
+    this.makeNoiseObjects(this.target.points.length);
   }
 
   // linear interpolation function
@@ -106,25 +108,25 @@ class Cursor {
 
   // lint all style values
   updateStyle = () => {
-    this.dotActive = this.data.styles[this.activeStyle].dotActive;
+    this.current.dotActive = this.target.dotActive;
 
     // lint size
-    this.size = this.lint(this.size, this.data.styles[this.activeStyle].size, this.snapSpeed);
+    this.current.size = this.lint(this.current.size, this.target.size, this.snapSpeed);
 
     // update noise values
-    this.noisy = this.data.styles[this.activeStyle].noisy;
-    if (this.noisy) {
+    this.current.noisy = this.target.noisy;
+    if (this.current.noisy) {
       this.noiseArr.forEach((item, i) => {
         item.x = this.noiseObjects[i].noise2D(this.evCount / this.noiseScale, 0);
         item.y = this.noiseObjects[i].noise2D(this.evCount / this.noiseScale, 1);
       });
     }
 
-    this.smooth = this.data.styles[this.activeStyle].smooth;
-    this.closed = this.data.styles[this.activeStyle].closed;
+    this.current.smooth = this.target.smooth;
+    this.current.closed = this.target.closed;
 
-    this.snap = this.data.styles[this.activeStyle].snap;
-    if (this.snap == "rect" || this.snap == "free") {
+    this.current.snap = this.target.snap;
+    if (this.current.snap == "rect" || this.current.snap == "free") {
       this.stuck = true;
     }
     else {
@@ -132,14 +134,14 @@ class Cursor {
     }
 
     // lint rotation?
-    this.rotationSpeed = this.data.styles[this.activeStyle].rotationSpeed;
+    this.current.rotationSpeed = this.target.rotationSpeed;
     
     // lint color and fill
-    this.lintColor(this.color, this.data.styles[this.activeStyle].color, this.snapSpeed);
-    this.lintColor(this.fillColor, this.data.styles[this.activeStyle].fill, this.snapSpeed);
+    this.lintColor(this.current.color, this.target.color, this.snapSpeed);
+    this.lintColor(this.current.fillColor, this.target.fill, this.snapSpeed);
 
     // update noise
-    this.makeNoisyPoints(this.targetPoints);
+    this.makeNoisyPoints(this.target.points);
 
     // lint group
     if (this.stuck)
@@ -153,26 +155,26 @@ class Cursor {
 
   // apply cursor style to polygon
   applyStyle = () => {
-    if (this.targetPoints.length == 0) return;
+    if (this.target.points.length == 0) return;
     // set dot to client position if active
-    if (this.dotActive)
+    if (this.current.dotActive)
       this.dotGroup.position.set(this.clientPos.x, this.clientPos.y);
     else
       this.dotGroup.position.set(-100, -100);
 
     // smooth/flatten can only be applied if it is a polygon
     if (this.polygon.segments.length > 2) {
-      if (this.smooth)
+      if (this.current.smooth)
         this.polygon.smooth();
       else
         this.polygon.flatten(100); // flatten error in pixels
     }
 
-    this.polygon.closed = this.closed;
+    this.polygon.closed = this.current.closed;
 
-    if (this.rotationSpeed != 0){
-      this.group.rotate(this.rotationSpeed);
-      this.angle = (this.angle + this.rotationSpeed) % 360;
+    if (this.current.rotationSpeed != 0){
+      this.group.rotate(this.current.rotationSpeed);
+      this.angle = (this.angle + this.current.rotationSpeed) % 360;
     }
     else { // lint back to angle 0
       let rotation = this.lint(this.angle, 359.99, this.snapSpeed) - this.angle;
@@ -180,8 +182,8 @@ class Cursor {
       this.angle = (this.angle + rotation) % 360;
     }
 
-    this.polygon.strokeColor = this.toPaperColor(this.color);
-    this.polygon.fillColor = this.toPaperColor(this.fillColor);
+    this.polygon.strokeColor = this.toPaperColor(this.current.color);
+    this.polygon.fillColor = this.toPaperColor(this.current.fillColor);
     
     this.group.position.set(this.pos.x, this.pos.y);
   }
@@ -227,7 +229,7 @@ class Cursor {
 
   // saves the coordinates of the centre of an element
   setSnapTarget = (item) => {
-    this.target = item;
+    this.targetObj = item;
     this.stuckGroup.x = item.left + item.width / 2;
     this.stuckGroup.y = item.top + item.height / 2;
   }
@@ -238,18 +240,23 @@ class Cursor {
     if (!(style in this.data.styles))
       style = "default";
 
+    // copy new style values
+    for (let prop in defaultStyle) {
+      this.target[prop] = this.data.styles[style][prop];
+    }
+
     // update points
-    this.targetPoints = this.data.styles[style].points.map(p => new paper.Point(p.x * this.data.styles[style].size,
-                                                                                p.y * this.data.styles[style].size));
-    this.noisyTargetPoints = this.targetPoints.slice();
-    this.updateNPoints(this.targetPoints.length);
+    this.target.points = this.target.points.map(p => new paper.Point(p.x * this.data.styles[style].size,
+                                                                     p.y * this.data.styles[style].size));
+    this.noisyTargetPoints = this.target.points.slice();
+    this.updateNPoints(this.target.points.length);
 
     // handle snap
     if (this.data.styles[style].snap == "rect") {
-      let wd2 = this.target.width / 2;
-      let hd2 = this.target.height / 2;
+      let wd2 = this.targetObj.width / 2;
+      let hd2 = this.targetObj.height / 2;
 
-      this.targetPoints = [
+      this.target.points = [
         { x: -wd2, y: -hd2 },
         { x: wd2, y: -hd2 },
         { x: wd2, y: hd2 },
@@ -259,8 +266,8 @@ class Cursor {
       this.updateNPoints(4);
     }
     else if (this.data.styles[style].snap == "free") {
-      let wd2 = this.target.width / 2;
-      let hd2 = this.target.height / 2;
+      let wd2 = this.targetObj.width / 2;
+      let hd2 = this.targetObj.height / 2;
 
       let points = 8;
 
@@ -271,11 +278,11 @@ class Cursor {
 
       let deg360 = Math.PI * 2;
 
-      this.targetPoints = [];
+      this.target.points = [];
 
       for (let i = 0; i < points; i++) {
         let deg = deg360 / points * i + Math.PI;
-        this.targetPoints.push({ x: len * Math.cos(deg), y: len * Math.sin(deg) });
+        this.target.points.push({ x: len * Math.cos(deg), y: len * Math.sin(deg) });
       }
 
       this.updateNPoints(points);
@@ -284,7 +291,7 @@ class Cursor {
 
     if (style == "default") {
       this.stuck = false;
-      this.updateNPoints(this.targetPoints.length);
+      this.updateNPoints(this.target.points.length);
     }
 
     this.activeStyle = style;
@@ -361,14 +368,14 @@ class Cursor {
     this.snapSpeed = this.data.snapSpeed;
 
     for (let prop in defaultStyle) {
-      this[prop] = this.data.styles[this.activeStyle][prop];
+      this.current[prop] = this.target[prop] = this.data.styles[this.activeStyle][prop];
     }
-    this.color = {};
-    Object.assign(this.color, this.data.styles[this.activeStyle].color);
-    this.fillColor = {};
-    Object.assign(this.fillColor, this.data.styles[this.activeStyle].fill);
-    this.targetPoints = this.data.styles[this.activeStyle].points.map(p => new paper.Point(p.x * this.size, p.y * this.size));
-    this.noisyTargetPoints = this.targetPoints.slice();
+    this.current.color = {};
+    Object.assign(this.current.color, this.target.color);
+    this.current.fillColor = {};
+    Object.assign(this.current.fillColor, this.target.fill);
+    this.target.points = this.target.points.map(p => new paper.Point(p.x * this.current.size, p.y * this.current.size));
+    this.noisyTargetPoints = this.target.points.slice();
 
     // remove old cursor
     if (this.polygon)
@@ -376,11 +383,11 @@ class Cursor {
 
     // create new cursor
     this.polygon = new paper.Path({
-      segments: this.targetPoints,
+      segments: this.target.points,
       strokeCap: 'round',
-      strokeColor: this.toPaperColor(this.color),
-      closed: this.closed,
-      fillColor: this.fill
+      strokeColor: this.toPaperColor(this.current.color),
+      closed: this.current.closed,
+      fillColor: this.current.fillColor
     });
     this.group = new paper.Group({
       children: [this.polygon],
