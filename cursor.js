@@ -1,3 +1,24 @@
+// default styling
+const defaultSyleset = {
+  name: "",
+  speed: 1,
+  snapSpeed: 0.25,
+  styles: {}
+};
+
+const defaultStyle = {
+  points: [],
+  size: 20,
+  rotationSpeed: 0,
+  dotActive: true,
+  smooth: false,
+  noisy: false,
+  closed: true,
+  snap: null,
+  color: { r: 0, g: 0, b: 0, a: 0 },
+  fill: { r: 0, g: 0, b: 0, a: 0 }
+};
+
 /**
  * Cursor stores a cursor and all of its relevant information.
  * 
@@ -12,8 +33,9 @@
  *  * cursor.setSnapTarget(snapBoundingBox) before snapping to an element (only required when using snap)
  * 
  * TODO:
- *  * move points to style (instead of styleset)
  *  * line width?
+ *  * reorganize data: this.current, this.target
+ *  * noise levels based on size
  * **/
 
 class Cursor {
@@ -217,7 +239,9 @@ class Cursor {
       style = "default";
 
     // update points
-    this.targetPoints = this.data.styles[style].points.map(p => new paper.Point(p.x * this.size, p.y * this.size));
+    this.targetPoints = this.data.styles[style].points.map(p => new paper.Point(p.x * this.data.styles[style].size,
+                                                                                p.y * this.data.styles[style].size));
+    this.noisyTargetPoints = this.targetPoints.slice();
     this.updateNPoints(this.targetPoints.length);
 
     // handle snap

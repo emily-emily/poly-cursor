@@ -1,25 +1,5 @@
 let sin45 = 1 / Math.SQRT2;
 
-const defaultSyleset = {
-  name: "",
-  speed: 1,
-  snapSpeed: 0.25,
-  styles: {}
-};
-
-const defaultStyle = {
-  points: [],
-  size: 20,
-  rotationSpeed: 0,
-  dotActive: true,
-  smooth: false,
-  noisy: false,
-  closed: true,
-  snap: null,
-  color: { r: 0, g: 0, b: 0, a: 0 },
-  fill: { r: 0, g: 0, b: 0, a: 0 }
-};
-
 // style sets for different cursors
 // the default is the constant style above
 // if a default style is missing from a cursor, it takes on the constant default style
@@ -29,6 +9,7 @@ let cursorSet = [
     name: "triangle",
     styles: {
       default: {
+        size: 20,
         points: [
           { x: 0, y: 0 },
           { x: sin45, y: sin45 },
