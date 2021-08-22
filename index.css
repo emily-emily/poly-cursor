@@ -24,12 +24,13 @@ body * {
 }
 
 .title-container {
+  text-align: center;
   padding: 25vh 0 20vh 0;
 }
 
 .title {
-  text-align: center;
   font-size: 26px;
+  text-decoration: none;
 }
 
 #cursor-selection-box {
@@ -46,7 +47,14 @@ body * {
 .github-link {
   position: fixed;
   bottom: 0;
+  left: 0;
+  margin: 20px 20px;
+}
+
+.cred {
+  position: fixed;
+  bottom: 0;
   right: 0;
-  margin: 10px 10px;
+  margin: 20px 20px;
   font-size: 0.8em;
 }

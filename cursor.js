@@ -42,7 +42,6 @@ class Cursor {
   evCount = 0; // for noise generating
   noiseArr = []; // noise for each point (not scaled; range is -1 to 1)
   noiseScale = 200; // noise speed
-  maxNoise = 20; // multiplied by noise
 
   target = {};
   current = {};
@@ -236,13 +235,12 @@ class Cursor {
     }
 
     // update points
-    this.target.points = this.target.points.map(p => new paper.Point(p.x * this.data.styles[style].size,
-                                                                     p.y * this.data.styles[style].size));
+    this.target.points = this.target.points.map(p => new paper.Point(p.x * this.target.size, p.y * this.target.size));
     this.noisyTargetPoints = this.target.points.slice();
     this.updateNPoints(this.target.points.length);
 
     // handle snap
-    if (this.data.styles[style].snap == "rect") {
+    if (this.target.snap == "rect") {
       let wd2 = this.targetObj.width / 2;
       let hd2 = this.targetObj.height / 2;
 
@@ -255,16 +253,16 @@ class Cursor {
 
       this.updateNPoints(4);
     }
-    else if (this.data.styles[style].snap == "free") {
+    else if (this.target.snap == "free") {
       let wd2 = this.targetObj.width / 2;
       let hd2 = this.targetObj.height / 2;
 
       let points = 8;
 
       // use larger length
-      let len = wd2 > hd2 ? wd2 : hd2;
+      this.target.size = wd2 > hd2 ? wd2 : hd2;
       // give some space
-      len *= 1.2;
+      this.target.size += 10;
 
       let deg360 = Math.PI * 2;
 
@@ -272,7 +270,7 @@ class Cursor {
 
       for (let i = 0; i < points; i++) {
         let deg = deg360 / points * i + Math.PI;
-        this.target.points.push({ x: len * Math.cos(deg), y: len * Math.sin(deg) });
+        this.target.points.push({ x: this.target.size * Math.cos(deg), y: this.target.size * Math.sin(deg) });
       }
 
       this.updateNPoints(points);
@@ -302,8 +300,8 @@ class Cursor {
     this.noisyTargetPoints = points.slice();
     this.noisyTargetPoints = this.noisyTargetPoints.map((pt, i) => {
       return {
-        x: pt.x + this.noiseArr[i].x * this.maxNoise,
-        y: pt.y + this.noiseArr[i].y * this.maxNoise
+        x: pt.x + this.noiseArr[i].x * this.target.size / 5,
+        y: pt.y + this.noiseArr[i].y * this.target.size / 5
       }
     });
   }

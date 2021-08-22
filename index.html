@@ -14,12 +14,17 @@
     <!-- Google Fonts (Open Sans) -->
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <script src="https://kit.fontawesome.com/3a9f7f920c.js" crossorigin="anonymous"></script>
   </head>
   <body>
     <canvas id="cursor-canvas" resize></canvas>
     
     <div class="title-container">
-      <h1 class="title"><span class="cursor-snapFree">poly-cursor</span></h1>
+      <a class="title" href="https://github.com/emily-emily/poly-cursor" target="_blank">
+        <span class="cursor-snapFree">poly-cursor</span>
+      </a>
     </div>
 
     <div id="cursor-selection-box">
@@ -28,7 +33,11 @@
       <button class="cursor-spin">circle</button>
     </div>
 
-    <span class="github-link">2021 · <a href="https://github.com/emily-emily" target="_blank" class="cursor-hover">Emily Yu</a></span>
+    <span class="github-link">
+      <a href="https://github.com/emily-emily" target="_blank" class="cursor-snapFree"><i class="fab fa-github fa-lg"></i></a>
+    </span>
+
+    <span class="cred">2021 · Emily Yu</span>
     
     
     <!-- simplex-noise -->
