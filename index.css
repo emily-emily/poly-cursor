@@ -19,8 +19,21 @@ html, body {
   z-index: 0;
 }
 
-body * {
-  z-index: 1;
+#shade {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+  opacity: 0;
+  background-color: black;
+  pointer-events: none;
+  z-index: 2;
+  transition: 0.5s;
+}
+
+#shade.active {
+  opacity: 0.7;
 }
 
 .title-container {
@@ -44,17 +57,52 @@ body * {
   border: 1px solid white;
 }
 
-.github-link {
+.fixed {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  margin: 20px 20px;
-}
-
-.cred {
-  position: fixed;
-  bottom: 0;
-  right: 0;
   margin: 20px 20px;
   font-size: 0.8em;
+  z-index: 3;
+}
+
+.bottom-left {
+  bottom: 0;
+  left: 0;
+}
+
+.bottom-right {
+  bottom: 0;
+  right: 0;
+}
+
+#tip {
+  display: inline-flex;
+  flex-direction: column-reverse;
+}
+
+#tip-icon {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid white;
+  text-align: center;
+  font-size: 18px;
+  align-items: center;
+  justify-content: center;
+}
+
+#tip-text {
+  display: inline-block;
+  opacity: 0;
+  transition: 0.5s;
+  max-width: 300px;
+  margin-bottom: 10px;
+}
+
+#tip-icon:hover + #tip-text {
+  opacity: 1;
+}
+
+.github-icon {
+  margin-left: 10px;
 }

@@ -20,6 +20,8 @@
   </head>
   <body>
     <canvas id="cursor-canvas" resize></canvas>
+
+    <div id="shade"></div>
     
     <div class="title-container">
       <a class="title" href="https://github.com/emily-emily/poly-cursor" target="_blank">
@@ -33,19 +35,28 @@
       <button class="cursor-spin">circle</button>
     </div>
 
-    <span class="github-link">
-      <a href="https://github.com/emily-emily" target="_blank" class="cursor-snapFree"><i class="fab fa-github fa-lg"></i></a>
+    <span class="fixed bottom-left">
+      <span id="tip">
+        <span id="tip-icon"><span><b>?</b></span></span>
+        <span id="tip-text">Hover over items to see effects and click on buttons to change cursors. Works best with a mouse.</span>
+      </span>
     </span>
 
-    <span class="cred">2021 · Emily Yu</span>
+    <span class="fixed bottom-right">2021 · Emily Yu
+      <a href="https://github.com/emily-emily/poly-cursor" target="_blank" class="github-icon">
+        <i class="fab fa-github fa-2x cursor-snapFree"></i>
+      </a>
+    </span>
     
     
     <!-- simplex-noise -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/simplex-noise/2.4.0/simplex-noise.min.js"
-      integrity="sha512-UFPpekaMf0TrCIkPv9mRT3reo/HzSjkOLq57Rtzb+E1ej1TRUOes6J/Ge4uZXyxWA9b4i5DqSZns79YaUoJ2kA==" crossorigin="anonymous"></script>
+            integrity="sha512-UFPpekaMf0TrCIkPv9mRT3reo/HzSjkOLq57Rtzb+E1ej1TRUOes6J/Ge4uZXyxWA9b4i5DqSZns79YaUoJ2kA=="
+            crossorigin="anonymous"></script>
     <!-- paper.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.15/paper-full.min.js"
-      integrity="sha512-ovjLI1ZcZe6bw+ImQ21r+sv8q/Vwob2kq7tFidK6E1LWfi0T4uobbmpfEU1//a9h9o5Kkt+MnMWf6rWlg0EiMw==" crossorigin="anonymous"></script>
+            integrity="sha512-ovjLI1ZcZe6bw+ImQ21r+sv8q/Vwob2kq7tFidK6E1LWfi0T4uobbmpfEU1//a9h9o5Kkt+MnMWf6rWlg0EiMw=="
+            crossorigin="anonymous"></script>
 
     <script type="text/javascript" src="cursor-set.js"></script>
     <script type="text/javascript" src="cursor.js"></script>
